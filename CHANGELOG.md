@@ -1,3 +1,7 @@
+## Unreleased
+
+- Add a WebUI (KernelSU/KernelSU Next/APatch) to pick the spoofed device profile: Original quality (Pixel) or Data saver (Pixel 4 XL, `coral`), without hand-editing config files.
+
 ## Google Photos Unlimited v4
 
 - Fix Pixel-exclusive system services breaking: the module no longer hides `pixel_experience_<year>_exclusive.xml` sysconfig files system-wide on any device/ROM ([#19](https://github.com/Rev4N1/GPhotosUnlimited/issues/19))

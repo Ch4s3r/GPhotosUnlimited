@@ -9,16 +9,11 @@
 #include "zygisk.hpp"
 #include "json/single_include/nlohmann/json.hpp"
 #include "shadowhook.h"
+#include "config_path.hpp"
 
 #define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, "FGP/Native", __VA_ARGS__)
 
 #define DEX_FILE_PATH "/data/adb/modules/unlimitedphotos/classes.dex"
-
-#define PROP_FILE_PATH "/data/adb/modules/unlimitedphotos/fgp.prop"
-#define CUSTOM_PROP_FILE_PATH "/data/adb/modules/unlimitedphotos/custom.fgp.prop"
-
-#define JSON_FILE_PATH "/data/adb/modules/unlimitedphotos/fgp.json"
-#define CUSTOM_JSON_FILE_PATH "/data/adb/modules/unlimitedphotos/custom.fgp.json"
 
 #define PHOTOS_PACKAGE "com.google.android.apps.photos"
 
@@ -48,17 +43,6 @@ static bool parseInt(const std::string &str, int &out) {
     }
     out = negative ? -value : value;
     return true;
-}
-
-// Trailing whitespace in a config value ends up spoofed verbatim into a Build field otherwise.
-static void trim(std::string &str) {
-    size_t last = str.find_last_not_of(" \t");
-    if (last == std::string::npos) {
-        str.clear();
-        return;
-    }
-    str.resize(last + 1);
-    str.erase(0, str.find_first_not_of(" \t"));
 }
 
 // Reads one integer "Advanced Settings" entry, if present, then drops it from the parsed config
@@ -506,13 +490,8 @@ static void companion(int fd) {
 
     long dexSize = readFile(fopen(DEX_FILE_PATH, "rb"), dexVector);
 
-    FILE *config = fopen(CUSTOM_PROP_FILE_PATH, "r");
-    if (!config)
-        config = fopen(CUSTOM_JSON_FILE_PATH, "r");
-    if (!config)
-        config = fopen(PROP_FILE_PATH, "r");
-
-    long configSize = readFile(config, configVector);
+    std::string configPath = resolveConfigPath(configFileExists, readProfileSelection);
+    long configSize = readFile(fopen(configPath.c_str(), "r"), configVector);
 
     if (!writeFull(fd, &dexSize, sizeof(long)) || !writeFull(fd, &configSize, sizeof(long))
             || !writeFull(fd, dexVector.data(), dexSize)

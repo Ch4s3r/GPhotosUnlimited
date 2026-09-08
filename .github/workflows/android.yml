@@ -30,6 +30,14 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
+    - name: Run native config path unit test
+      run: |
+        clang++ -std=c++23 -fno-exceptions -fno-rtti tests/test_config_path.cpp -o /tmp/test_config_path
+        /tmp/test_config_path
+
+    - name: Run WebUI unit test
+      run: node --test tests/test_webui.mjs
+
     - name: Build with Gradle
       run: ./gradlew --warning-mode all assembleRelease
 

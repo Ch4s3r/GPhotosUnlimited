@@ -27,6 +27,17 @@ After installing (and rebooting), **back up a new photo**, then open that photo 
 
 If a newly backed-up photo *does* count against your storage, clear Google Photos app data and reboot, then take another photo and check again.
 
+## Choosing the backup quality
+
+The module ships two spoofing profiles:
+
+- **Original quality** (default) - spoofs a 2016 Pixel. Grants the unlimited "Original quality" backup tier.
+- **Data saver** - spoofs a Pixel 4 XL. Grants the unlimited "Storage saver" backup tier.
+
+On KernelSU, KernelSU Next or APatch, open the module's WebUI (from the module list, tap the module) and pick a profile; a "Reboot now" button appears whenever the picked profile hasn't taken effect yet, since only a reboot applies it. Magisk has no built-in WebUI host, so Magisk users need [MMRL](https://github.com/MMRLApp/MMRL) or [KsuWebUIStandalone](https://github.com/5ec1cff/KsuWebUIStandalone) to open `webroot/index.html`.
+
+If you have a `custom.fgp.prop` or `custom.fgp.json` in the module directory, it always takes priority over the WebUI selection - the WebUI shows a notice and disables itself in that case.
+
 ## About 'custom.app_replace_list.txt' file
 
 You can customize the included default [app_replace_list.txt](https://raw.githubusercontent.com/Rev4N1/GPhotosUnlimited/main/module/app_replace_list.txt) from the module directory (/data/adb/modules/unlimitedphotos) then rename it to custom.app_replace_list.txt to systemlessly replace any additional conflicting custom ROM spoof injection app paths to disable them. Changes take effect after a reboot.

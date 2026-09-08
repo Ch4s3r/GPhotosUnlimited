@@ -1,0 +1,44 @@
+# The 2019 Pixel 4 XL on its final Android 13 build - unlimited "Storage saver" tier.
+# Values match the real coral factory image's build.prop (Pixel 4 XL, TP1A.221005.002.B2).
+
+# Build Fields
+MANUFACTURER=Google
+MODEL=Pixel 4 XL
+FINGERPRINT=google/coral/coral:13/TP1A.221005.002.B2/9382335:user/release-keys
+BRAND=google
+PRODUCT=coral
+DEVICE=coral
+HARDWARE=coral
+BOARD=coral
+RELEASE=13
+SDK=33
+ID=TP1A.221005.002.B2
+DISPLAY=TP1A.221005.002.B2
+INCREMENTAL=9382335
+TYPE=user
+TAGS=release-keys
+SECURITY_PATCH=2022-10-05
+DEVICE_INITIAL_SDK_INT=29
+
+# System Properties
+*.build.id=TP1A.221005.002.B2
+*.security_patch=2022-10-05
+*api_level=29
+
+# Feature Overrides
+com.google.android.feature.PIXEL_EXPERIENCE=true
+com.google.android.feature.GOOGLE_BUILD=true
+com.google.android.feature.GOOGLE_EXPERIENCE=true
+com.google.android.feature.PIXEL_2019_EXPERIENCE=true
+com.google.android.apps.photos.PIXEL_2019_PRELOAD=true
+com.google.android.apps.photos.NEXUS_PRELOAD=false
+com.google.android.apps.photos.PIXEL_PRELOAD=false
+com.google.android.apps.photos.PIXEL_2016_PRELOAD=false
+
+# Advanced Settings
+spoofBuild=1
+spoofProps=0
+spoofProvider=0
+spoofSignature=0
+spoofFeatures=1
+verboseLogs=0

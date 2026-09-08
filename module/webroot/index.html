@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Google Photos Unlimited</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f2f2f7;
+    --card: #ffffff;
+    --text: #1c1c1e;
+    --muted: #6b6b70;
+    --accent: #1a73e8;
+    --border: #d8d8dc;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #000000;
+      --card: #1c1c1e;
+      --text: #f2f2f7;
+      --muted: #9a9a9e;
+      --accent: #4b9bff;
+      --border: #38383a;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, system-ui, "Segoe UI", Roboto, sans-serif;
+  }
+  main {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 24px 16px 48px;
+  }
+  h1 { font-size: 20px; margin: 8px 0 4px; }
+  p.subtitle { color: var(--muted); margin: 0 0 20px; font-size: 14px; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 4px 16px;
+    margin-bottom: 16px;
+  }
+  label.option {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+  }
+  label.option:last-child { border-bottom: none; }
+  label.option input { margin-top: 3px; }
+  .option-text strong { display: block; font-size: 15px; }
+  .option-text span { display: block; color: var(--muted); font-size: 13px; margin-top: 2px; }
+  .notice {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 16px;
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+  .status {
+    font-size: 13px;
+    color: var(--muted);
+    min-height: 18px;
+  }
+  fieldset { border: none; padding: 0; margin: 0; }
+  fieldset:disabled label.option { opacity: 0.45; cursor: not-allowed; }
+  .reboot-button {
+    display: block;
+    width: 100%;
+    margin-top: 4px;
+    padding: 12px;
+    border: none;
+    border-radius: 12px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .reboot-button:active { opacity: 0.8; }
+  /* [hidden] and .reboot-button{display:block} have equal specificity, and author CSS beats the
+     UA stylesheet's [hidden]{display:none} in that case - so this needs to be explicit. */
+  .reboot-button[hidden] { display: none; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Google Photos Unlimited</h1>
+  <p class="subtitle">Choose which Pixel storage tier to spoof for Google Photos backup.</p>
+
+  <div id="overrideNotice" class="notice" hidden>
+    A hand-edited custom.fgp.prop or custom.fgp.json is present in the module folder, so it
+    overrides this selection. Remove it to switch profiles here.
+  </div>
+
+  <form class="card">
+    <fieldset id="profileFields">
+      <label class="option">
+        <input type="radio" name="profile" value="original">
+        <span class="option-text">
+          <strong>Original quality</strong>
+          <span>Spoofs a 2016 Pixel. Grants the unlimited "Original quality" backup tier.</span>
+        </span>
+      </label>
+      <label class="option">
+        <input type="radio" name="profile" value="datasaver">
+        <span class="option-text">
+          <strong>Data saver</strong>
+          <span>Spoofs a Pixel 4 XL. Grants the unlimited "Storage saver" backup tier.</span>
+        </span>
+      </label>
+    </fieldset>
+  </form>
+
+  <p id="status" class="status"></p>
+  <button id="rebootButton" class="reboot-button" hidden>Reboot now</button>
+</main>
+
+<script>
+const MODULE_DIR = "/data/adb/modules/unlimitedphotos";
+const PROFILE_FILE = MODULE_DIR + "/custom.profile.prop";
+const CUSTOM_PROP_FILE = MODULE_DIR + "/custom.fgp.prop";
+const CUSTOM_JSON_FILE = MODULE_DIR + "/custom.fgp.json";
+const ACTIVE_PROFILE_FILE = MODULE_DIR + "/.active_profile";
+
+const overrideNotice = document.getElementById("overrideNotice");
+const profileFields = document.getElementById("profileFields");
+const statusEl = document.getElementById("status");
+const rebootButton = document.getElementById("rebootButton");
+const radios = document.querySelectorAll('input[name="profile"]');
+
+function exec(command) {
+  return new Promise((resolve) => {
+    const callbackName = "cb" + Math.random().toString(36).slice(2);
+    window[callbackName] = (errno, stdout, stderr) => {
+      delete window[callbackName];
+      resolve({ errno, stdout, stderr });
+    };
+    ksu.exec(command, "{}", callbackName);
+  });
+}
+
+async function fileExists(path) {
+  const result = await exec(`[ -f "${path}" ] && echo yes || echo no`);
+  return result.stdout.trim() === "yes";
+}
+
+async function readProfile() {
+  const result = await exec(`grep -m1 '^profile=' "${PROFILE_FILE}" 2>/dev/null | cut -d= -f2`);
+  return result.stdout.trim();
+}
+
+// post-fs-data.sh snapshots the profile that is actually loaded this boot into
+// .active_profile before the WebUI can touch custom.profile.prop again. Comparing against that
+// (rather than just detecting "a change happened") means switching away and back within the same
+// boot correctly reports nothing pending, since the active profile never stopped matching it.
+async function readActiveProfile() {
+  const result = await exec(`cat "${ACTIVE_PROFILE_FILE}" 2>/dev/null`);
+  return result.stdout.trim() || "original";
+}
+
+async function writeProfile(profile) {
+  await exec(`printf 'profile=%s\\n' "${profile}" > "${PROFILE_FILE}"`);
+}
+
+async function rebootIsPending(desiredProfile) {
+  return (await readActiveProfile()) !== desiredProfile;
+}
+
+async function init() {
+  const [hasCustomProp, hasCustomJson, currentProfile] = await Promise.all([
+    fileExists(CUSTOM_PROP_FILE),
+    fileExists(CUSTOM_JSON_FILE),
+    readProfile(),
+  ]);
+
+  if (hasCustomProp || hasCustomJson) {
+    overrideNotice.hidden = false;
+    profileFields.disabled = true;
+    return;
+  }
+
+  const selected = currentProfile === "datasaver" ? "datasaver" : "original";
+  for (const radio of radios) {
+    radio.checked = radio.value === selected;
+  }
+
+  await refreshRebootButton();
+}
+
+// The WebUI host resumes an existing WebView instead of reloading the page when this screen is
+// reopened, so the page's lifecycle events aren't a reliable way to notice the module folder
+// changed underneath it (e.g. a soft-reboot re-snapshotting .active_profile). Poll instead of
+// depending on load/focus/visibilitychange actually firing here.
+async function refreshRebootButton() {
+  if (profileFields.disabled) return;
+  const selectedRadio = document.querySelector('input[name="profile"]:checked');
+  if (!selectedRadio) return;
+  rebootButton.hidden = !(await rebootIsPending(selectedRadio.value));
+}
+setInterval(refreshRebootButton, 2000);
+
+for (const radio of radios) {
+  radio.addEventListener("change", async (event) => {
+    await writeProfile(event.target.value);
+    await refreshRebootButton();
+  });
+}
+
+rebootButton.addEventListener("click", async () => {
+  rebootButton.disabled = true;
+  statusEl.textContent = "Rebooting…";
+  await exec("reboot");
+});
+
+init();
+</script>
+</body>
+</html>

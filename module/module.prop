@@ -3,5 +3,5 @@ name=Google Photos Unlimited Backup
 version=v4
 versionCode=40000
 author=Rev4N - Credits to osm0sis & chiteroman
-description=Google Photos Unlimited Backup by Spoofing into Pixel XL.
+description=Google Photos Unlimited Backup by Spoofing into a Pixel. WebUI lets you pick Original quality (Pixel) or Data saver (Pixel 4 XL).
 updateJson=https://raw.githubusercontent.com/Rev4N1/GPhotosUnlimited/main/update.json
